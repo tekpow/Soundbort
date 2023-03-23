@@ -61,7 +61,10 @@ class AudioManager extends TypedEmitter<AudioManagerEvents> {
 
     public async join(member: Discord.GuildMember): Promise<AudioSubscription | JoinFailureTypes> {
         let subscription = this.subscriptions.get(member.guild.id);
-        if (subscription) return subscription;
+        if (subscription)
+        {
+            subscription.destroy();
+        }
 
         const channel = member.voice.channel;
         if (!channel) return JoinFailureTypes.FailedNotInVoiceChannel; // Join a voice channel first

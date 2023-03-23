@@ -10,6 +10,8 @@ import { SoundboardSlotSchema } from "./schemas/SoundboardSlotsSchema";
 import { StatsSchema } from "./schemas/StatsSchema";
 import { VotesSchema } from "./schemas/VotesSchema";
 import { GuildDeletionTrackerSchema } from "./schemas/GuildDeletionTrackerSchema";
+import { SoundboardEntranceSchema } from "./schemas/SoundboardEntranceSchema";
+import { SoundboardExitSchema } from "./schemas/SoundboardExitSchema";
 
 export enum DbCollection {
     BlacklistUser = "blacklist_user",
@@ -21,6 +23,8 @@ export enum DbCollection {
     Stats = "app_stats",
     Votes = "bot_votes",
     InteractionReplies = "interaction_replies",
+    Entrances = "entrances",
+    Exits = "exits"
 }
 
 export const blacklist_user = new DatabaseCache<BlacklistUserSchema>(DbCollection.BlacklistUser, { indexName: "userId" });
@@ -40,6 +44,10 @@ export const stats = databaseProxy<StatsSchema>(DbCollection.Stats);
 export const votes = databaseProxy<VotesSchema>(DbCollection.Votes);
 
 export const interaction_replies = new DatabaseCache<InteractionRepliesSchema>(DbCollection.InteractionReplies, { indexName: "interactionId" });
+
+export const entrances = new DatabaseCache<SoundboardEntranceSchema>(DbCollection.Entrances, { indexName: "userId" });
+
+export const exits = new DatabaseCache<SoundboardExitSchema>(DbCollection.Exits, { indexName: "userId" });
 
 // Indexes
 
@@ -61,4 +69,8 @@ database.onConnect(async () => {
     await votes.createIndex({ ts: 1, userId: 1 }, { unique: true });
 
     await interaction_replies.collection.createIndex({ interactionId: 1 }, { unique: true });
+
+    await entrances.collection.createIndex({ userId: 1, customSampleId: 1 }, { unique: true });
+
+    await exits.collection.createIndex({ userId: 1, customSampleId: 1 }, { unique: true });
 });

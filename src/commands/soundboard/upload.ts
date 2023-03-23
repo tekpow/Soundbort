@@ -47,16 +47,16 @@ export function install({ registry, admin }: CmdInstallerArgs): void {
             await interaction.deferReply();
 
             const name = interaction.options.getString("name", true).trim();
-            const scope = interaction.options.getString("to", false) as (SAMPLE_TYPES.USER | SAMPLE_TYPES.SERVER | null) || SAMPLE_TYPES.USER;
+            const scope = interaction.options.getString("to", false) as (SAMPLE_TYPES.USER | SAMPLE_TYPES.SERVER | null) || SAMPLE_TYPES.SERVER;
             // get attachment from command options. Fallback to the last attachment from the chat.
             const attachment = interaction.options.getAttachment("audio-file", false) ?? await getLastAttachment(interaction.channel);
             if (!attachment) {
                 return replyEmbedEphemeral(UploadErrors.FileMissing, EmbedType.Error);
             }
 
-            if (scope === SAMPLE_TYPES.SERVER && !await admin.isAdmin(interaction.guild, interaction.user.id)) {
-                return replyEmbed(UploadErrors.NotModerator, EmbedType.Error);
-            }
+            // if (scope === SAMPLE_TYPES.SERVER && !await admin.isAdmin(interaction.guild, interaction.user.id)) {
+            //     return replyEmbed(UploadErrors.NotModerator, EmbedType.Error);
+            // }
 
             for await (const status of upload(attachment, interaction.guild, interaction.user, name, scope)) {
                 await interaction.editReply(status);

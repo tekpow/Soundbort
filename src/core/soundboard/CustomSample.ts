@@ -379,8 +379,9 @@ export class CustomSample extends AbstractSample implements SoundboardCustomSamp
 
     // SLOTS
 
-    static MIN_SLOTS = 10;
-    static MAX_SLOTS = 25;
+    // TODO: Remove le cap de slots
+    static MIN_SLOTS = 999;
+    static MAX_SLOTS = 999;
 
     static emitter = new TypedEmitter<CustomSampleEmitterEvents>();
 
