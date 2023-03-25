@@ -1,0 +1,18 @@
+version: '3.9'
+services:
+  soundbort:
+    build: .
+    container_name: soundbort
+    restart: unless-stopped
+    volumes:
+      - ./config:/app/config
+      - ./data:/app/data
+    environment:
+      - SOUNDBORT_BOT_NAME=${SOUNDBORT_BOT_NAME}
+      - SOUNDBORT_OWNER_IDS=${SOUNDBORT_OWNER_IDS}
+      - SOUNDBORT_DISCORD_TOKEN=${SOUNDBORT_DISCORD_TOKEN}
+      - SOUNDBORT_DB_URI=${SOUNDBORT_DB_URI}
+      - SOUNDBORT_OWNER_GUILD_IDS=${SOUNDBORT_OWNER_GUILD_IDS}
+      - NODE_ENV=${NODE_ENV}
+    ports:
+      - 8080:8080

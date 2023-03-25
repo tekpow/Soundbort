@@ -34,7 +34,6 @@ EXPOSE 8080
 VOLUME /app/data
 VOLUME /app/logs
 
-ENV NODE_ENV=production
 CMD [ "node", "--enable-source-maps", "dist/index.js" ]
 
 HEALTHCHECK --start-period=5m --interval=30s --timeout=10s CMD npm run health

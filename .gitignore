@@ -6,7 +6,6 @@ node_modules/
 
 # ignore all config files (REALLY IMPORTANT)
 .env
-docker-compose.yml
 
 # ignore compiled files
 dist/
