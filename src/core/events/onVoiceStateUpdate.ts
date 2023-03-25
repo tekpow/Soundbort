@@ -3,6 +3,8 @@ import * as Discord from "discord.js";
 import AudioManager, { JoinFailureTypes } from "../audio/AudioManager";
 import { CustomSample } from "../../core/soundboard/CustomSample";
 import EntranceManager from "../../core/data-managers/EntranceManager";
+import ExitManager from "../../core/data-managers/ExitManager";
+import Queue from "../../core/Queue";
 
 /*
  * The following event handler handles how Soundbort automatically
@@ -14,26 +16,34 @@ export default function onVoiceStateUpdate() {
         const client = old_state.client;
         if (!client.user) return;
 
-        // TODO: Gérer l'exit quand le système de queue sera implémenté
-        if (new_state.channelId && old_state.channelId !== new_state.channelId)
+        if (old_state.channelId !== new_state.channelId && new_state.member)
         {
-            if (new_state.member)
+            let exit = await ExitManager.findUserExit(new_state.member.user.id);
+            if (exit && old_state.channelId)
             {
-                let entrance = await EntranceManager.findUserEntrance(new_state.member.user.id);
-                if (entrance)
-                {
-                    let sample = await CustomSample.findById(entrance.customSampleId);
+                let sample = await CustomSample.findById(exit.customSampleId);
+                if (!sample)
+                    return;
 
-                    let subscription = await AudioManager.join(new_state.member);
-                    if (subscription === JoinFailureTypes.FailedNotInVoiceChannel ||
-                        subscription === JoinFailureTypes.FailedTryAgain)
-                    {
-                        console.log("Failed to join voice channel");
-                        return;
-                    }
+                Queue.enqueue({
+                    guild: old_state.guild,
+                    channel: old_state.guild.channels.cache.get(old_state.channelId)!,
+                    sample
+                });
+            }
 
-                    sample!.play(subscription.audio_player);
-                }                
+            let entrance = await EntranceManager.findUserEntrance(new_state.member.user.id);
+            if (entrance && new_state.channelId)
+            {
+                let sample = await CustomSample.findById(entrance.customSampleId);
+                if (!sample)
+                    return;
+
+                Queue.enqueue({
+                    guild: new_state.guild,
+                    channel: new_state.guild.channels.cache.get(new_state.channelId)!,
+                    sample
+                });
             }
         }
 

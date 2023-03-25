@@ -11,13 +11,12 @@ import { SlashCommand } from "../../modules/commands/SlashCommand";
 import { SlashCommandPermissions } from "../../modules/commands/permission/SlashCommandPermissions";
 import { createStringOption } from "../../modules/commands/options/string";
 
-import AudioManager, { JoinFailureTypes } from "../../core/audio/AudioManager";
-import StatsCollectorManager from "../../core/data-managers/StatsCollectorManager";
 import { CustomSample } from "../../core/soundboard/CustomSample";
 import { StandardSample } from "../../core/soundboard/StandardSample";
 import { search } from "../../core/soundboard/methods/searchMany";
 import { findOne } from "../../core/soundboard/methods/findOne";
 import GuildConfigManager from "../../core/data-managers/GuildConfigManager";
+import Queue from "../../core/Queue";
 
 const log = Logger.child({ label: "Command => play" });
 
@@ -30,23 +29,17 @@ async function play(interaction: Discord.CommandInteraction<"cached"> | Discord.
         }
 
         const member = await guild.members.fetch(interaction.user.id);
-
-        const subscription = await AudioManager.join(member);
-        if (subscription === JoinFailureTypes.FailedNotInVoiceChannel) {
-            return replyEmbedEphemeral("You need to join a voice channel first!", EmbedType.Info);
-        }
-        if (subscription === JoinFailureTypes.FailedTryAgain) {
-            return replyEmbedEphemeral("Connecting to the voice channel failed. Try again later.", EmbedType.Error);
-        }
-        if (AudioManager.has(guild.id) && guild.members.me?.voice.channelId && member.voice.channelId !== guild.members.me.voice.channelId) {
-            return replyEmbedEphemeral("You need to be in the same voice channel as the bot!", EmbedType.Info);
+        if (!member.voice.channelId) {
+            return replyEmbedEphemeral("You need to be in a voice channel to play a sound sample.", EmbedType.Info);
         }
 
-        await sample.play(subscription.audio_player);
+        Queue.enqueue({
+            guild,
+            channel: guild.channels.cache.get(member.voice.channelId)!,
+            sample,
+        });
 
-        StatsCollectorManager.incPlayedSamples(1);
-
-        await interaction.reply(replyEmbed(`🔊 Playing ${sample.name}`));
+        await interaction.reply(replyEmbed(`🔊 Queued ${sample.name}`));
         await timeout(1500);
         await interaction.deleteReply().catch(doNothing);
     } catch (error) {

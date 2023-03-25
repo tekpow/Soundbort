@@ -59,15 +59,12 @@ class AudioManager extends TypedEmitter<AudioManagerEvents> {
         });
     }
 
-    public async join(member: Discord.GuildMember): Promise<AudioSubscription | JoinFailureTypes> {
-        let subscription = this.subscriptions.get(member.guild.id);
+    public async joinChannel(channel: Discord.GuildBasedChannel): Promise<AudioSubscription | JoinFailureTypes> {
+        let subscription = this.subscriptions.get(channel.guild.id);
         if (subscription)
         {
             subscription.destroy();
         }
-
-        const channel = member.voice.channel;
-        if (!channel) return JoinFailureTypes.FailedNotInVoiceChannel; // Join a voice channel first
 
         /*
         Here, we try to establish a connection to a voice channel. If we're already connected
@@ -80,8 +77,8 @@ class AudioManager extends TypedEmitter<AudioManagerEvents> {
             adapterCreator: channel.guild.voiceAdapterCreator as Voice.DiscordGatewayAdapterCreator,
         });
         subscription = new AudioSubscription(voice_connection, () => {
-            this.subscriptions.delete(member.guild.id);
-            this.emit("destroy", member.guild.id);
+            this.subscriptions.delete(channel.guild.id);
+            this.emit("destroy", channel.guild.id);
 
             if (this.subscriptions.size > 0) return;
             this.emit("destroyAll");
@@ -109,6 +106,19 @@ class AudioManager extends TypedEmitter<AudioManagerEvents> {
             }
             return JoinFailureTypes.FailedTryAgain;
         }
+    }
+
+    public async join(member: Discord.GuildMember): Promise<AudioSubscription | JoinFailureTypes> {
+        let subscription = this.subscriptions.get(member.guild.id);
+        if (subscription)
+        {
+            subscription.destroy();
+        }
+
+        const channel = member.voice.channel;
+        if (!channel) return JoinFailureTypes.FailedNotInVoiceChannel; // Join a voice channel first
+
+        return this.joinChannel(channel);
     }
 
     public get(guildId: Discord.Snowflake): AudioSubscription | undefined {
