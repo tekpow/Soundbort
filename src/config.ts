@@ -43,10 +43,6 @@ const _ENV = (node_env: string | undefined): EnvironmentStages => {
 };
 export const ENVIRONMENT = _ENV(process.env.NODE_ENV);
 
-export const TOP_GG_TOKEN = process.env.SOUNDBORT_TOP_GG_TOKEN;
-
-export const TOP_GG_WEBHOOK_TOKEN = process.env.SOUNDBORT_TOP_GG_WEBHOOK_TOKEN;
-
 // ////////////// INFO //////////////
 
 export const PROJECT_ROOT = path.normalize(path.join(__dirname, ".."));

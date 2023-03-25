@@ -43,7 +43,6 @@ function generateSampleMessage(
     samples: CustomSample[] | StandardSample[],
     title: string,
     iconUrl: string | null,
-    slots?: number,
     joinNotice: boolean = true,
 ): Pick<Discord.InteractionReplyOptions, "embeds" | "components"> {
     const rows = generateSampleButtons(samples);
@@ -53,10 +52,6 @@ function generateSampleMessage(
         iconURL: iconUrl ?? undefined,
     });
     if (joinNotice) embed.setDescription("Join a voice channel and click on one of the buttons below. ✨");
-    if (slots) embed.setFooter({
-        text: `Slots: ${samples.length} / ${slots} used.` +
-            ((slots < CustomSample.MAX_SLOTS) ? " See /vote to get more slots" : ""),
-    });
 
     return { embeds: [embed], components: rows };
 }
@@ -84,10 +79,8 @@ async function scopeAll(interaction: Discord.CommandInteraction): Promise<void> 
     }
 
     if (guild_samples.length > 0 && interaction.guild) {
-        const guild_slots = interaction.guildId ? await CustomSample.countSlots(interaction.guildId) : 0;
-
         await reply(generateSampleMessage(
-            guild_samples, `${interaction.guild.name}'s Server Samples`, interaction.guild.iconURL({ dynamic: true, size: 32 }), guild_slots, false,
+            guild_samples, `${interaction.guild.name}'s Server Samples`, interaction.guild.iconURL({ dynamic: true, size: 32 }), false,
         ));
     }
 
@@ -96,10 +89,8 @@ async function scopeAll(interaction: Discord.CommandInteraction): Promise<void> 
         // If it's not allowed to play foreign samples in the server, don't display user samples
         && (!interaction.inGuild() || await GuildConfigManager.hasAllowForeignSamples(interaction.guildId))
     ) {
-        const user_slots = await CustomSample.countSlots(interaction.user.id);
-
         await reply(generateSampleMessage(
-            user_samples, `${interaction.user.username}'s Samples`, interaction.user.avatarURL({ dynamic: true, size: 32 }), user_slots, false,
+            user_samples, `${interaction.user.username}'s Samples`, interaction.user.avatarURL({ dynamic: true, size: 32 }), false,
         ));
     }
 }
@@ -124,14 +115,13 @@ async function scopeServer(interaction: Discord.CommandInteraction): Promise<Sim
     }
 
     const samples = await CustomSample.getGuildSamples(interaction.guildId);
-    const slots = await CustomSample.countSlots(interaction.guildId);
 
     if (samples.length === 0) {
         return replyEmbedEphemeral("Your server doesn't have any sound clips in its soundboard. Add them with `/upload`.", EmbedType.Info);
     }
 
     return generateSampleMessage(
-        samples, `${interaction.guild.name}'s Server Samples`, interaction.guild.iconURL({ dynamic: true, size: 32 }), slots,
+        samples, `${interaction.guild.name}'s Server Samples`, interaction.guild.iconURL({ dynamic: true, size: 32 }),
     );
 }
 
@@ -141,14 +131,13 @@ async function scopeUser(interaction: Discord.CommandInteraction): Promise<Simpl
     }
 
     const samples = await CustomSample.getUserSamples(interaction.user.id);
-    const slots = await CustomSample.countSlots(interaction.user.id);
 
     if (samples.length === 0) {
         return replyEmbedEphemeral("You don't have any sound clips in your soundboard. Add them with `/upload`.", EmbedType.Info);
     }
 
     return generateSampleMessage(
-        samples, `${interaction.user.username}'s Samples`, interaction.user.avatarURL({ dynamic: true, size: 32 }), slots,
+        samples, `${interaction.user.username}'s Samples`, interaction.user.avatarURL({ dynamic: true, size: 32 }),
     );
 }
 

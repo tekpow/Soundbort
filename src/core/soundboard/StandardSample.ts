@@ -188,6 +188,4 @@ export class StandardSample extends AbstractSample implements SoundboardStandard
         await models.standard_sample.deleteOne({ name: sample.name });
         await fs.unlink(sample.file);
     }
-
-    static MAX_SLOTS = 25;
 }

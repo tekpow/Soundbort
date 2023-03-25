@@ -6,9 +6,7 @@ import { ActualGuildConfigSchema } from "./schemas/GuildConfigSchema";
 import { InteractionRepliesSchema } from "./schemas/InteractionRepliesSchema";
 import { SoundboardCustomSampleSchema } from "./schemas/SoundboardCustomSampleSchema";
 import { SoundboardStandardSampleSchema } from "./schemas/SoundboardStandardSampleSchema";
-import { SoundboardSlotSchema } from "./schemas/SoundboardSlotsSchema";
 import { StatsSchema } from "./schemas/StatsSchema";
-import { VotesSchema } from "./schemas/VotesSchema";
 import { GuildDeletionTrackerSchema } from "./schemas/GuildDeletionTrackerSchema";
 import { SoundboardEntranceSchema } from "./schemas/SoundboardEntranceSchema";
 import { SoundboardExitSchema } from "./schemas/SoundboardExitSchema";
@@ -21,7 +19,6 @@ export enum DbCollection {
     SampleSlots = "soundboard_slots",
     GuildConfig = "guild_config",
     Stats = "app_stats",
-    Votes = "bot_votes",
     InteractionReplies = "interaction_replies",
     Entrances = "entrances",
     Exits = "exits"
@@ -35,13 +32,9 @@ export const custom_sample = new DatabaseCache<SoundboardCustomSampleSchema>(DbC
 
 export const standard_sample = new DatabaseCache<SoundboardStandardSampleSchema>(DbCollection.StandardSample, { indexName: "name" });
 
-export const sample_slots = databaseProxy<SoundboardSlotSchema>(DbCollection.SampleSlots);
-
 export const guild_config = new DatabaseCache<ActualGuildConfigSchema>(DbCollection.GuildConfig, { indexName: "guildId" });
 
 export const stats = databaseProxy<StatsSchema>(DbCollection.Stats);
-
-export const votes = databaseProxy<VotesSchema>(DbCollection.Votes);
 
 export const interaction_replies = new DatabaseCache<InteractionRepliesSchema>(DbCollection.InteractionReplies, { indexName: "interactionId" });
 
@@ -62,11 +55,7 @@ database.onConnect(async () => {
 
     await standard_sample.collection.createIndex({ name: 1 }, { unique: true });
 
-    await sample_slots.createIndex({ ownerId: 1 }, { unique: true });
-
     await guild_config.collection.createIndex({ guildId: 1 }, { unique: true });
-
-    await votes.createIndex({ ts: 1, userId: 1 }, { unique: true });
 
     await interaction_replies.collection.createIndex({ interactionId: 1 }, { unique: true });
 

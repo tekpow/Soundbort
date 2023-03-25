@@ -45,7 +45,6 @@
     "sodium-native": "^3.3.0",
     "temp": "^0.9.4",
     "tiny-typed-emitter": "^2.1.0",
-    "topgg-autoposter": "^2.0.1",
     "utf-8-validate": "^5.0.9",
     "winston": "^3.8.1",
     "winston-daily-rotate-file": "^4.7.1",
