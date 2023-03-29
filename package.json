@@ -49,6 +49,7 @@
     "utf-8-validate": "^5.0.9",
     "winston": "^3.8.1",
     "winston-daily-rotate-file": "^4.7.1",
+    "yauzl": "^2.10.0",
     "zlib-sync": "^0.1.7"
   },
   "devDependencies": {
@@ -62,6 +63,7 @@
     "@types/node": "^16.11.26",
     "@types/node-fetch": "^2.6.2",
     "@types/temp": "^0.9.1",
+    "@types/yauzl": "^2.10.0",
     "@typescript-eslint/eslint-plugin": "^5.30.6",
     "@typescript-eslint/parser": "^5.30.6",
     "eslint": "^8.20.0",

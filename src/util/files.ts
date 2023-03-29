@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
+import { promisify } from "node:util";
 import { pipeline } from "node:stream/promises";
+import yauzl from "yauzl";
 import fetch from "node-fetch";
 import disk from "diskusage";
 
@@ -55,4 +57,11 @@ export async function downloadFile(url: string, out_file: string): Promise<void>
         res.body,
         fs.createWriteStream(out_file),
     );
+}
+
+export async function unzipFile(buffer: Buffer): Promise<yauzl.ZipFile> {
+    const yauzlFromBuffer = promisify(yauzl.fromBuffer as (buffer: Buffer, options: yauzl.Options, callback: (err: Error | null, zipfile: yauzl.ZipFile) => void) => void);
+
+    const zipfile = await yauzlFromBuffer(buffer, { lazyEntries: true });
+    return zipfile;
 }
