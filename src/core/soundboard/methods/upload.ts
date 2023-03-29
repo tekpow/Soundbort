@@ -284,3 +284,96 @@ export async function* upload(
         yield failed(UploadErrors.General);
     }
 }
+
+// TODO: Remettre des logs
+export async function importIntoBoard(temp_raw_file: string, name: string, user: Discord.User, guild: Discord.Guild, scope: SAMPLE_TYPES) {
+    // /////////// CHECKING FILE ///////////
+
+    //yield status("Checking file data...");
+
+    try {
+        const data = await ffprobe(temp_raw_file);
+
+        if (!data.streams.some(stream => stream.codec_type === "audio" && stream.channels)) {
+            return;// yield failed(UploadErrors.NoStreams);
+        }
+
+        const duration = data.format.duration;
+        // if duration undefined and duration === 0
+        if (!duration) {
+            return;// yield failed(UploadErrors.NoDuration);
+        }
+
+        if (duration * 1000 > MAX_DURATION) {
+            return;// yield failed(UploadErrors.TooLong);
+        }
+    } catch (error) {
+        //log.debug(error);
+        return;// yield failed(UploadErrors.FfProbeError);
+    }
+
+    // /////////// CONVERTING FILE ///////////
+
+    //yield status("Converting and optimizing sound file...");
+
+    const temp_conversion_file = temp.path({
+        prefix: "sample_conversion_",
+        suffix: CustomSample.EXT,
+    });
+
+    try {
+        await convertAudio(temp_raw_file, temp_conversion_file);
+    } catch (error) {
+        //log.debug(error);
+        return;// yield failed(UploadErrors.ConversionError);
+    }
+
+    let sample_file: string;
+    let new_id: string | undefined;
+
+    if (scope !== SAMPLE_TYPES.STANDARD) {
+        new_id = await generateId();
+
+        if (!new_id) {
+            return;// yield failed(UploadErrors.IdGeneration);
+        }
+
+        sample_file = CustomSample.generateFilePath(new_id);
+
+        await CustomSample.ensureDir();
+    } else {
+        sample_file = StandardSample.generateFilePath(name);
+
+        await StandardSample.ensureDir();
+    }
+
+    await fs.move(temp_conversion_file, sample_file);
+    await temp.cleanup();
+
+    // /////////// FINISHING UP ///////////
+
+    //yield status("Saving to database and finishing up...");
+
+    let sample: CustomSample | StandardSample;
+
+    if (scope !== SAMPLE_TYPES.STANDARD) {
+        sample = await CustomSample.create({
+            scope: scope,
+            id: new_id!,
+            name: name,
+            creatorId: scope === SAMPLE_TYPES.USER ? user.id : guild.id,
+            userIds: scope === SAMPLE_TYPES.USER ? [user.id] : [],
+            guildIds: scope === SAMPLE_TYPES.SERVER ? [guild.id] : [],
+            plays: 0,
+            created_at: new Date(),
+            modified_at: new Date(),
+        });
+    } else {
+        sample = await StandardSample.create({
+            name: name,
+            plays: 0,
+            created_at: new Date(),
+            modified_at: new Date(),
+        });
+    }
+}

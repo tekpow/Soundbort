@@ -14,7 +14,7 @@ import { createStringOption } from "../../modules/commands/options/string";
 import { createAttachmentOption } from "../../modules/commands/options/attachment";
 import { createChoice } from "../../modules/commands/choice";
 import { EmbedType, replyEmbedEphemeral } from "../../util/builders/embed";
-import { upload, UploadErrors } from "../../core/soundboard/methods/upload";
+import { upload, UploadErrors, importIntoBoard } from "../../core/soundboard/methods/upload";
 import { unzipFile } from "../../util/files";
 
 import { downloadFile, isEnoughDiskSpace } from "../../util/files";
@@ -74,7 +74,7 @@ export function install({ registry, admin }: CmdInstallerArgs): void {
                 };
 
                 zipfile.readEntry();
-                zipfile.on("entry", async entry => {
+                zipfile.on("entry", async (entry: any) => {
                     if (/\/$/.test(entry.fileName)) zipfile.readEntry();
                     else {
                         // Audio files
@@ -96,7 +96,11 @@ export function install({ registry, admin }: CmdInstallerArgs): void {
                                 fsDefault.createWriteStream(entryFile),
                             );
 
-                            console.log(entryFile);
+                            const filenameWithoutExtension = fileName.replace(/\.[^/.]+$/, "");
+
+                            console.log(filenameWithoutExtension);
+                            importIntoBoard(entryFile, filenameWithoutExtension, interaction.user, interaction.guild!, to);
+
                         } else process.stdout.write(`[INFO]: Ignoring file: ${entry.fileName} (unsupported file type)\n`);
                         zipfile.readEntry();
                     }
