@@ -129,7 +129,7 @@ export function install({ registry, admin }: CmdInstallerArgs): void {
                     }
                 }
             }
-            await interaction.reply(replyEmbed("Successfully imported all sound files", EmbedType.Success));
+            await interaction.editReply(replyEmbed("Successfully imported all sound files", EmbedType.Success));
         },
     }));
 }
