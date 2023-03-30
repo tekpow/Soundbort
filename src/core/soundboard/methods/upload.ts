@@ -266,35 +266,36 @@ export async function* upload(
 }
 
 // TODO: Remettre des logs
-export async function importIntoBoard(temp_raw_file: string, name: string, user: Discord.User, guild: Discord.Guild, scope: SAMPLE_TYPES) {
+export async function* importIntoBoard(
+    temp_raw_file: string,
+    name: string,
+    user: Discord.User,
+    guild: Discord.Guild,
+    scope: SAMPLE_TYPES): AsyncGenerator<Discord.InteractionReplyOptions, void, void> {
     // /////////// CHECKING FILE ///////////
-
-    //yield status("Checking file data...");
 
     try {
         const data = await ffprobe(temp_raw_file);
 
         if (!data.streams.some(stream => stream.codec_type === "audio" && stream.channels)) {
-            return;// yield failed(UploadErrors.NoStreams);
+            return yield failed(UploadErrors.NoStreams);
         }
 
         const duration = data.format.duration;
         // if duration undefined and duration === 0
         if (!duration) {
-            return;// yield failed(UploadErrors.NoDuration);
+            return yield failed(UploadErrors.NoDuration);
         }
 
         if (duration * 1000 > MAX_DURATION) {
-            return;// yield failed(UploadErrors.TooLong);
+            return yield failed(UploadErrors.TooLong);
         }
     } catch (error) {
-        //log.debug(error);
-        return;// yield failed(UploadErrors.FfProbeError);
+        log.debug(error);
+        return yield failed(UploadErrors.FfProbeError);
     }
 
     // /////////// CONVERTING FILE ///////////
-
-    //yield status("Converting and optimizing sound file...");
 
     const temp_conversion_file = temp.path({
         prefix: "sample_conversion_",
@@ -304,8 +305,8 @@ export async function importIntoBoard(temp_raw_file: string, name: string, user:
     try {
         await convertAudio(temp_raw_file, temp_conversion_file);
     } catch (error) {
-        //log.debug(error);
-        return;// yield failed(UploadErrors.ConversionError);
+        log.debug(error);
+        return yield failed(UploadErrors.ConversionError);
     }
 
     let sample_file: string;
@@ -315,7 +316,7 @@ export async function importIntoBoard(temp_raw_file: string, name: string, user:
         new_id = await generateId();
 
         if (!new_id) {
-            return;// yield failed(UploadErrors.IdGeneration);
+            return yield failed(UploadErrors.IdGeneration);
         }
 
         sample_file = CustomSample.generateFilePath(new_id);
@@ -331,13 +332,8 @@ export async function importIntoBoard(temp_raw_file: string, name: string, user:
     await temp.cleanup();
 
     // /////////// FINISHING UP ///////////
-
-    //yield status("Saving to database and finishing up...");
-
-    let sample: CustomSample | StandardSample;
-
     if (scope !== SAMPLE_TYPES.STANDARD) {
-        sample = await CustomSample.create({
+        await CustomSample.create({
             scope: scope,
             id: new_id!,
             name: name,
@@ -349,7 +345,7 @@ export async function importIntoBoard(temp_raw_file: string, name: string, user:
             modified_at: new Date(),
         });
     } else {
-        sample = await StandardSample.create({
+        await StandardSample.create({
             name: name,
             plays: 0,
             created_at: new Date(),

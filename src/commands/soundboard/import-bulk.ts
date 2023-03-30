@@ -13,7 +13,7 @@ import { SlashCommandPermissions } from "../../modules/commands/permission/Slash
 import { createStringOption } from "../../modules/commands/options/string";
 import { createAttachmentOption } from "../../modules/commands/options/attachment";
 import { createChoice } from "../../modules/commands/choice";
-import { EmbedType, replyEmbedEphemeral } from "../../util/builders/embed";
+import { EmbedType, replyEmbed } from "../../util/builders/embed";
 import { upload, UploadErrors, importIntoBoard } from "../../core/soundboard/methods/upload";
 import { unzipFile } from "../../util/files";
 
@@ -43,12 +43,15 @@ export function install({ registry, admin }: CmdInstallerArgs): void {
         permissions: SlashCommandPermissions.ADMIN,
         async func(interaction) {
             try {
-                console.log("BEFORE GETTING ATTACHMENT");
+                await interaction.reply(replyEmbed("Processing audio files... (this may take a while)"));
+
                 const attachment = interaction.options.getAttachment(AUDO_ARCHIVE_PARAM);
                 const to = interaction.options.getString("to", false) as (SAMPLE_TYPES.USER | SAMPLE_TYPES.SERVER | null) || SAMPLE_TYPES.SERVER;
-                console.log("BEFORE DOWNLOADING FILE");
 
-                if (!attachment) return replyEmbedEphemeral(UploadErrors.FileMissing, EmbedType.Error);
+                if (!attachment) {
+                    await interaction.reply(replyEmbed(UploadErrors.FileMissing, EmbedType.Error));
+                    return;
+                }
 
                 const raw_file_name = temp.path({
                     prefix: "audio_files_",
@@ -56,7 +59,6 @@ export function install({ registry, admin }: CmdInstallerArgs): void {
                 });
                 await downloadFile(attachment.url, raw_file_name);
 
-                console.log("BEFORE OPENING FILE");
                 const file = await fs.open(raw_file_name, "r");
 
                 // show file type and size in console
@@ -82,7 +84,7 @@ export function install({ registry, admin }: CmdInstallerArgs): void {
                         // strip filename of any path information
                         const fileName = entry.fileName.replace(/^.*[/\\]/, "");
                         if (isSupported) {
-                            process.stdout.write(`[INFO]: Processing audio file: ${fileName}\n`);
+                            await interaction.editReply(replyEmbed(`Processing audio file: ${fileName}\n`));
 
                             // Create a temporary file to store the audio file
                             const entryFile = temp.path({
@@ -99,9 +101,14 @@ export function install({ registry, admin }: CmdInstallerArgs): void {
                             const filenameWithoutExtension = fileName.replace(/\.[^/.]+$/, "");
 
                             console.log(filenameWithoutExtension);
-                            importIntoBoard(entryFile, filenameWithoutExtension, interaction.user, interaction.guild!, to);
+                            for await (const status of importIntoBoard(entryFile, filenameWithoutExtension, interaction.user, interaction.guild!, to)) {
+                                await interaction.editReply(status);
+                            }
+                        }
+                        else {
+                            await interaction.editReply(replyEmbed(`Ignoring file: ${entry.fileName} (unsupported file type)\n`));
+                        }
 
-                        } else process.stdout.write(`[INFO]: Ignoring file: ${entry.fileName} (unsupported file type)\n`);
                         zipfile.readEntry();
                     }
                 });
@@ -113,14 +120,16 @@ export function install({ registry, admin }: CmdInstallerArgs): void {
 
                 switch (error.message) {
                     case (`Required option "${AUDO_ARCHIVE_PARAM}" not found.`): {
-                        return replyEmbedEphemeral("You must provide a zip archive of your sound files.", EmbedType.Error);
+                        await interaction.reply(replyEmbed("You must provide a zip archive of your sound files.", EmbedType.Error));
+                        return;
                     }
                     default: {
-                        return replyEmbedEphemeral("An unknown error occurred.", EmbedType.Error);
+                        await interaction.reply(replyEmbed("An unknown error occurred.", EmbedType.Error));
+                        return;
                     }
                 }
             }
-            return replyEmbedEphemeral("Successfully imported all sound files", EmbedType.Success);
+            await interaction.reply(replyEmbed("Successfully imported all sound files", EmbedType.Success));
         },
     }));
 }
