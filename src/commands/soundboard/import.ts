@@ -15,14 +15,6 @@ import { UploadErrors } from "../../core/soundboard/methods/upload";
 async function importUser(interaction: Discord.ButtonInteraction | Discord.CommandInteraction, sample: CustomSample) {
     const user = interaction.user;
 
-    // is soundboard full?
-    const sample_count = await CustomSample.countUserSamples(user.id);
-
-    const slot_count = await CustomSample.countSlots(user.id);
-    if (sample_count >= slot_count) {
-        return replyEmbedEphemeral(UploadErrors.TooManySamples.replace("{MAX_SAMPLES}", slot_count.toLocaleString("en")), EmbedType.Error);
-    }
-
     if (await CustomSample.findSampleUser(user.id, sample.name)) {
         return replyEmbedEphemeral("You already have a sample with this name in your soundboard.", EmbedType.Error);
     }
@@ -44,13 +36,6 @@ export function install({ registry, admin }: CmdInstallerArgs): void {
 
         if (!await admin.isAdmin(guild, user.id)) {
             return replyEmbedEphemeral("You're not a moderator of this server, you can't remove server samples.", EmbedType.Error);
-        }
-
-        // is soundboard full?
-        const sample_count = await CustomSample.countGuildSamples(guildId);
-        const slot_count = await CustomSample.countSlots(guild.id);
-        if (sample_count >= slot_count) {
-            return replyEmbedEphemeral(UploadErrors.TooManySamples.replace("{MAX_SAMPLES}", slot_count.toLocaleString("en")), EmbedType.Error);
         }
 
         if (await CustomSample.findSampleGuild(guildId, sample.name)) {

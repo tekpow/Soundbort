@@ -4,7 +4,6 @@ import { EmbedType, replyEmbedEphemeral } from "../../util/builders/embed";
 
 import { CustomSample } from "../../core/soundboard/CustomSample";
 import { StandardSample } from "../../core/soundboard/StandardSample";
-import { UploadErrors } from "../../core/soundboard/methods/upload";
 
 export default new SlashSubCommand({
     name: "import",
@@ -18,11 +17,6 @@ export default new SlashSubCommand({
     ],
     async func(interaction) {
         const id = interaction.options.getString("sample_id", true).trim();
-
-        const sample_count = await StandardSample.countSamples();
-        if (sample_count >= StandardSample.MAX_SLOTS) {
-            return replyEmbedEphemeral(UploadErrors.TooManySamples.replace("{MAX_SAMPLES}", StandardSample.MAX_SLOTS.toLocaleString("en")), EmbedType.Error);
-        }
 
         const sample = await CustomSample.findById(id);
         if (!sample) {

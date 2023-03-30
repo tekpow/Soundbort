@@ -1,17 +1,14 @@
 import path from "node:path";
 import * as Discord from "discord.js";
-import { AutoPoster as topGGStatsPoster } from "topgg-autoposter";
 import { CronJob } from "cron";
 
 import Logger from "../log";
 import { SAMPLE_TYPES } from "../const";
-import { TOP_GG_TOKEN, TOP_GG_WEBHOOK_TOKEN } from "../config";
 
 import timer from "../util/timer";
 import { walk } from "../util/files";
 import { CmdInstallerFile } from "../util/types";
 
-import WebhookListener from "./WebhookListener";
 import AdminPermissions from "./permissions/AdminPermissions";
 import StatsCollectorManager from "./data-managers/StatsCollectorManager";
 import DataDeletionManager from "./data-managers/DataDeletionManager";
@@ -45,16 +42,6 @@ export default class Core {
 
     private constructor(client: Discord.Client<true>) {
         this.client = client;
-
-        if (TOP_GG_TOKEN) {
-            topGGStatsPoster(TOP_GG_TOKEN, this.client)
-                .on("posted", () => {
-                    log.debug("Posted stats to Top.gg!");
-                })
-                .on("error", error => {
-                    log.error("Top.gg posting error", error);
-                });
-        }
     }
 
     public async setup(): Promise<this> {
@@ -119,7 +106,6 @@ export default class Core {
         // ///////////////////
 
         StatsCollectorManager.listen();
-        if (TOP_GG_WEBHOOK_TOKEN) WebhookListener.listen();
 
         // Make sure a status is always set. When reconnecting
         // it is sometimes reset
@@ -156,7 +142,6 @@ export default class Core {
                 await Promise.all([
                     GuildConfigManager.removeConfig(guildId),
                     CustomSample.removeAll(guildId, SAMPLE_TYPES.SERVER),
-                    CustomSample.removeSlots(guildId),
                     InteractionRepliesManager.removeFromGuild(guildId),
                     DataDeletionManager.finallyRemoveGuild(guildId),
                 ]);

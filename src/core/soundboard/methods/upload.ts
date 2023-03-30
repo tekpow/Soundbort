@@ -39,7 +39,6 @@ export const UploadErrors = {
     OutOfSpace: "Disk space is running out. Please inform the developer.",
     NotInGuild: "You can't upload samples to a server when you're not calling this command from a server.",
     NotModerator: "You can't upload a sample to this server, because you don't have the permissions.",
-    TooManySamples: "You have filled all your sample slots ({MAX_SAMPLES}). Try deleting some or type `/vote` to get more slots before you can add more.",
     NoChannel: "Weirdly enough this channel was not cached.",
     FileMissing: "Upload an audio file with the command with the 'audio-file' option, or upload it to the chat and then call this command.",
     UnsupportedType: "The file is not an audio file. Please upload an audio file (mp3, ogg, wav etc...).",
@@ -112,25 +111,6 @@ export async function* upload(
     try {
         if (!await isEnoughDiskSpace()) {
             return yield failed(UploadErrors.OutOfSpace);
-        }
-
-        // is soundboard full?
-        if (scope === SAMPLE_TYPES.STANDARD) {
-            const sample_count = await StandardSample.countSamples();
-            if (sample_count >= StandardSample.MAX_SLOTS) {
-                return yield failed(UploadErrors.TooManySamples.replace("{MAX_SAMPLES}", StandardSample.MAX_SLOTS.toLocaleString("en")));
-            }
-        } else {
-            let sample_count: number;
-            switch (scope) {
-                case SAMPLE_TYPES.USER: sample_count = await CustomSample.countUserSamples(user.id); break;
-                case SAMPLE_TYPES.SERVER: sample_count = await CustomSample.countGuildSamples(guild.id); break;
-            }
-
-            const slot_count = await CustomSample.countSlots(scope === SAMPLE_TYPES.USER ? user.id : guild.id);
-            if (sample_count >= slot_count) {
-                return yield failed(UploadErrors.TooManySamples.replace("{MAX_SAMPLES}", slot_count.toLocaleString("en")));
-            }
         }
 
         // /////////// ATTACHMENT CHECKS ///////////
